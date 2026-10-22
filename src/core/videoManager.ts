@@ -1,3 +1,4 @@
+import { VideoService } from "@vot.js/core/types/service";
 import YoutubeHelper from "@vot.js/ext/helpers/youtube";
 import { getVideoData } from "@vot.js/ext/utils/videoData";
 import votConfig from "@vot.js/shared/config";
@@ -538,7 +539,7 @@ export class VOTVideoManager {
     return detected;
   }
 
-  private async fetchRawVideoData() {
+  private async fetchRawVideoData(): Promise<Awaited<ReturnType<typeof getVideoData>>> {
     const { site, data } = this.videoHandler;
     try {
       if (isUniversalHtml5Site(site)) {
@@ -552,7 +553,7 @@ export class VOTVideoManager {
         return {
           url: mediaUrl,
           videoId: mediaUrl,
-          host: "custom" as const,
+          host: VideoService.custom,
           duration: Number.isFinite(video.duration) ? video.duration : undefined,
           isStream: video.duration === Infinity,
           title: document.title,
