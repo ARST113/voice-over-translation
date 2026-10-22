@@ -26,6 +26,7 @@ import {
 import type { VideoHandler } from "../VideoHandler";
 import VOTLocalizedError from "../VOTLocalizedError";
 import { normalizeMediaProxyHost } from "../videoHandler/modules/proxyShared";
+import { isUniversalHtml5Site, resolveHtml5MediaUrl } from "../universal/html5";
 import { isExternalVolumeHost } from "./hostPolicies";
 
 const FORCED_DETECTED_LANGUAGE_BY_HOST: Record<string, RequestLang> = {
@@ -540,6 +541,23 @@ export class VOTVideoManager {
   private async fetchRawVideoData() {
     const { site, data } = this.videoHandler;
     try {
+      if (isUniversalHtml5Site(site)) {
+        const video = this.videoHandler.video;
+        const mediaUrl = resolveHtml5MediaUrl(video);
+        if (!mediaUrl) {
+          throw new Error(
+            "Universal HTML5: no transferable media URL (MSE/blob, DRM and local media are unsupported)",
+          );
+        }
+        return {
+          url: mediaUrl,
+          videoId: mediaUrl,
+          host: "custom" as const,
+          duration: Number.isFinite(video.duration) ? video.duration : undefined,
+          isStream: video.duration === Infinity,
+          title: document.title,
+        };
+      }
       return await getVideoData(site, {
         fetchFn: GM_fetch,
         video: this.videoHandler.video,
