@@ -1,3 +1,6 @@
+import { VideoService } from "@vot.js/core/types/service";
+import type { ServiceConf } from "@vot.js/ext/types/service";
+
 /**
  * Universal HTML5 fallback for sites without an upstream VOT adapter.
  *
@@ -62,8 +65,8 @@ function isPublicHost(host: string): boolean {
  * The fallback runs after all upstream site-specific adapters.
  * Keep this distinct from VOT's existing custom/direct-link adapter.
  */
-export const universalHtml5Site = {
-  host: "custom" as const,
+export const universalHtml5Site: ServiceConf = {
+  host: VideoService.custom,
   url: "stub",
   additionalData: "universal-html5",
   rawResult: true as const,
@@ -73,5 +76,5 @@ export function isUniversalHtml5Site(site: {
   host: string;
   additionalData?: string;
 }): boolean {
-  return site.host === "custom" && site.additionalData === "universal-html5";
+  return site.host === VideoService.custom && site.additionalData === "universal-html5";
 }
