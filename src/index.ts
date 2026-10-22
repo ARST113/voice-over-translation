@@ -14,6 +14,7 @@ import { isIframe } from "./utils/iframeConnector";
 import { createIntervalIdleChecker } from "./utils/intervalIdleChecker";
 import { VideoObserver } from "./utils/VideoObserver";
 import { VideoHandler } from "./VideoHandler";
+import { universalHtml5Site } from "./universal/html5";
 
 const videoObserverChecker = createIntervalIdleChecker();
 const videoObserver = new VideoObserver(videoObserverChecker);
@@ -44,7 +45,8 @@ function logBootstrap(
 }
 
 function getServicesCached(): ServiceConf[] {
-  servicesCache ??= getService();
+  // Give known services priority over the generic HTML5 fallback.
+  servicesCache ??= [...getService(), universalHtml5Site];
   return servicesCache;
 }
 
