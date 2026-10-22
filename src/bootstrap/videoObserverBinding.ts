@@ -1,6 +1,7 @@
 import type { ServiceConf } from "@vot.js/ext/types/service";
 import { getVideoID } from "@vot.js/ext/utils/videoData";
 import logger from "#utils/logger.ts";
+import { isUniversalHtml5Site, resolveHtml5MediaUrl } from "../universal/html5";
 import { captureException } from "../modules/telemetry/client";
 import { getTranslationTags } from "../modules/telemetry/context";
 import { GM_fetch } from "../utils/gm";
@@ -70,7 +71,9 @@ export function bindObserverListeners(
     findContainer,
     createVideoHandler,
     resolveVideoId = (site, video) =>
-      getVideoID(site, { fetchFn: GM_fetch, video }),
+      (isUniversalHtml5Site(site)
+      ? Promise.resolve(resolveHtml5MediaUrl(video) ?? undefined)
+      : getVideoID(site, { fetchFn: GM_fetch, video })),
   } = options;
 
   if (boundObservers.has(videoObserver)) return;
