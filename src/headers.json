@@ -142,9 +142,13 @@
     "*://*.boomio-cdn.com/*",
     "*://*.kinopoisk.ru/*",
     "*://*/*.mp4*",
-    "*://*/*.webm*"
+    "*://*/*.webm*",
+    "*://*/*"
   ],
-  "grant": ["window.focus", "GM.xmlHttpRequest"],
+  "grant": [
+    "window.focus",
+    "GM.xmlHttpRequest"
+  ],
   "exclude": [
     "file://*/*.mp4*",
     "file://*/*.webm*",
