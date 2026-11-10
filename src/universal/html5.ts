@@ -1,3 +1,4 @@
+import type { VideoDataSubtitle } from "@vot.js/core/types/client";
 import { VideoService } from "@vot.js/core/types/service";
 import type { ServiceConf } from "@vot.js/ext/types/service";
 
@@ -36,6 +37,47 @@ export function resolveHtml5MediaUrl(video: HTMLVideoElement): string | null {
     }
   }
   return null;
+}
+
+/**
+ * Expose caption files already attached to generic HTML5 video elements.
+ * The Yandex subtitles API is still queried separately: these are site tracks
+ * and can be played even if that API returns no captions for a custom URL.
+ */
+export function getHtml5CaptionTracks(video: HTMLVideoElement): VideoDataSubtitle[] {
+  const result: VideoDataSubtitle[] = [];
+  const seen = new Set<string>();
+
+  for (const track of Array.from(video.querySelectorAll<HTMLTrackElement>("track[src]"))) {
+    const kind = String(track.kind || track.getAttribute("kind") || "subtitles").toLowerCase();
+    if (kind !== "captions" && kind !== "subtitles") continue;
+
+    const rawUrl = track.getAttribute("src") || track.src;
+    if (!rawUrl) continue;
+
+    let url: URL;
+    try {
+      url = new URL(rawUrl, video.ownerDocument.baseURI);
+    } catch {
+      continue;
+    }
+    if (url.protocol !== "https:" && url.protocol !== "http:") continue;
+    if (url.username || url.password || !isPublicHost(url.hostname)) continue;
+    url.hash = "";
+
+    const language = (track.srclang || track.getAttribute("srclang") || "und")
+      .trim()
+      .toLowerCase()
+      .split(/[-_]/)[0] || "und";
+    const format = /\.srt$/i.test(url.pathname) ? "srt" : "vtt";
+    const key = `${language}|${format}|${url.href}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    result.push({ source: "html5", language, format, url: url.href });
+  }
+
+  return result;
 }
 
 /** Reject local/private network endpoints. This is not a DNS rebinding guard. */

@@ -14,7 +14,10 @@ function buildUserscriptMeta(
   localeEntries: Array<[string, LocaleHeadersFile]>,
 ): UserscriptHeader {
   const baseMeta = getHeaders<UserscriptHeader>();
-  const finalUrl = `${getReleaseDownloadBase(repoUpdateBranch)}/${filename}.user.js`;
+  const isUniversalFork = baseMeta.namespace === "vot-universal-html5";
+  const finalUrl = isUniversalFork
+    ? `${repositoryUrl}/releases/download/universal-html5-preview/${filename}.user.js`
+    : `${getReleaseDownloadBase(repoUpdateBranch)}/${filename}.user.js`;
   const baseMatch = Array.isArray(baseMeta.match)
     ? baseMeta.match
     : [baseMeta.match];
@@ -65,12 +68,15 @@ export function formatUserscriptHeader(options: {
     options.localeEntries,
   );
   const sourceUrl = `${repositoryUrl}.git`;
+  const isUniversalFork = meta.namespace === "vot-universal-html5";
   const grants = [...options.grants];
   const orderedEntries: Array<[string, HeaderFieldValue]> = [
     ["name", meta.name],
     ...options.localeEntries.map(([locale, value]): [string, string] => [
       `name:${locale}`,
-      value.name,
+      isUniversalFork
+        ? value.name.replace(/^\[VOT\]\s*-\s*/, "[VOT Universal HTML5] - ")
+        : value.name,
     ]),
     ["namespace", meta.namespace],
     ["version", meta.version],

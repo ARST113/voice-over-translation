@@ -27,7 +27,7 @@ import {
 import type { VideoHandler } from "../VideoHandler";
 import VOTLocalizedError from "../VOTLocalizedError";
 import { normalizeMediaProxyHost } from "../videoHandler/modules/proxyShared";
-import { isUniversalHtml5Site, resolveHtml5MediaUrl } from "../universal/html5";
+import { getHtml5CaptionTracks, isUniversalHtml5Site, resolveHtml5MediaUrl } from "../universal/html5";
 import { isExternalVolumeHost } from "./hostPolicies";
 
 const FORCED_DETECTED_LANGUAGE_BY_HOST: Record<string, RequestLang> = {
@@ -471,7 +471,8 @@ export class VOTVideoManager {
         subtitles: videoData.subtitles,
         title: videoData.title,
         description: videoData.description,
-        allowTextLanguageDetection: true,
+        // A Russian page title does not establish the language of its HTML5 audio.
+        allowTextLanguageDetection: !isUniversalHtml5Site(this.videoHandler.site),
       });
       if (detectedLanguage && detectedLanguage !== "auto") {
         videoData.detectedLanguage = detectedLanguage;
@@ -557,6 +558,7 @@ export class VOTVideoManager {
           duration: Number.isFinite(video.duration) ? video.duration : undefined,
           isStream: video.duration === Infinity,
           title: document.title,
+          subtitles: getHtml5CaptionTracks(video),
         };
       }
       return await getVideoData(site, {
@@ -638,11 +640,12 @@ export class VOTVideoManager {
     }
 
     debug.log("VideoValidator videoData: ", this.videoHandler.videoData);
-    if (
-      this.videoHandler.data.dontTranslateLanguages?.includes(
-        this.videoHandler.videoData.detectedLanguage,
-      )
-    ) {
+    const selectedSource = this.videoHandler.translateFromLang;
+    const effectiveSource = isUniversalHtml5Site(this.videoHandler.site) &&
+      selectedSource !== "auto"
+      ? selectedSource
+      : videoData.detectedLanguage;
+    if (data.dontTranslateLanguages?.includes(effectiveSource)) {
       throw new VOTLocalizedError("VOTDisableFromYourLang");
     }
 
