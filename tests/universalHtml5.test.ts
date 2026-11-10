@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import {
+  getHtml5CaptionTracks,
   isUniversalHtml5Site,
   resolveHtml5MediaUrl,
 } from "../src/universal/html5";
@@ -73,4 +74,71 @@ test("does not confuse the fallback with the existing custom service", () => {
     }),
   ).toBe(true);
   expect(isUniversalHtml5Site({ host: "custom" })).toBe(false);
+});
+
+function fakeTrack(
+  src: string,
+  lang: string,
+  kind: string = "subtitles",
+): Record<string, unknown> {
+  const attrs: Record<string, string> = { src, srclang: lang, kind };
+  return {
+    src,
+    srclang: lang,
+    kind,
+    getAttribute: (name: string) => attrs[name] ?? null,
+  };
+}
+
+test("extracts captions and subtitles without guessing language from page title", () => {
+  const video = makeVideo({
+    querySelectorAll: (selector: string) => {
+      if (selector !== "track[src]") return [];
+      return [
+        fakeTrack("../captions-en.vtt?sig=abc", "en-US"),
+        fakeTrack("https://cdn.example/captions-ru.srt", "ru", "captions"),
+        fakeTrack("https://cdn.example/chapter.vtt", "en", "chapters"),
+      ];
+    },
+  });
+  expect(getHtml5CaptionTracks(video)).toEqual([
+    {
+      source: "html5",
+      language: "en",
+      format: "vtt",
+      url: "https://site.example/captions-en.vtt?sig=abc",
+    },
+    {
+      source: "html5",
+      language: "ru",
+      format: "srt",
+      url: "https://cdn.example/captions-ru.srt",
+    },
+  ]);
+});
+
+test("deduplicates subtitle tracks and excludes local or blob sources", () => {
+  const video = makeVideo({
+    querySelectorAll: () => [
+      fakeTrack("https://cdn.example/en.vtt", "en"),
+      fakeTrack("https://cdn.example/en.vtt", "en"),
+      fakeTrack("blob:https://site.example/ab", "en"),
+      fakeTrack("http://127.0.0.1/private.vtt", "en"),
+    ],
+  });
+  expect(getHtml5CaptionTracks(video)).toEqual([
+    {
+      source: "html5",
+      language: "en",
+      format: "vtt",
+      url: "https://cdn.example/en.vtt",
+    },
+  ]);
+});
+
+test("preserves unknown subtitle language instead of guessing the speech language", () => {
+  const video = makeVideo({
+    querySelectorAll: () => [fakeTrack("https://cdn.example/caption.vtt", "")],
+  });
+  expect(getHtml5CaptionTracks(video)[0].language).toBe("und");
 });
