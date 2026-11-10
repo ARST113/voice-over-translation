@@ -1,3 +1,4 @@
+import type { VideoDataSubtitle } from "@vot.js/core/types/client";
 import YoutubeHelper from "@vot.js/ext/helpers/youtube";
 import logger from "#utils/logger.ts";
 import { localizationProvider } from "../../localization/localizationProvider";
@@ -71,11 +72,11 @@ function buildSubtitleDescriptorKey(descriptor: SubtitleDescriptor): string {
   ].join("|");
 }
 
-function dedupeSubtitles(
-  subtitles: readonly SubtitleDescriptor[],
-): SubtitleDescriptor[] {
+function dedupeSubtitles<T extends SubtitleDescriptor>(
+  subtitles: readonly T[],
+): T[] {
   const seen = new Set<string>();
-  const result: SubtitleDescriptor[] = [];
+  const result: T[] = [];
 
   for (const descriptor of subtitles) {
     const key = buildSubtitleDescriptorKey(descriptor);
@@ -92,8 +93,8 @@ function dedupeSubtitles(
 
 function reconcileHtml5Tracks(
   handler: VideoHandler,
-  existing: readonly SubtitleDescriptor[],
-): SubtitleDescriptor[] {
+  existing: readonly VideoDataSubtitle[],
+): VideoDataSubtitle[] {
   if (!isUniversalHtml5Site(handler.site)) return [...existing];
 
   const tracks = getHtml5CaptionTracks(handler.video);
