@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - master
-      - feature/universal-html5-android
+      - fix/universal-html5-language-captions
     paths:
       - "src/**"
       - "vite/**"
@@ -20,7 +20,7 @@ jobs:
   userscript:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -39,3 +39,13 @@ jobs:
           name: vot-universal-html5-userscript
           path: dist/vot.user.js
           if-no-files-found: error
+      - name: Publish preview userscript for direct installation and updates
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view universal-html5-preview >/dev/null 2>&1 || \
+            gh release create universal-html5-preview --prerelease \
+              --title "VOT Universal HTML5 (experimental)" \
+              --notes "Experimental translation of additional HTML5 players. See UNIVERSAL_HTML5.md for limitations."
+          gh release upload universal-html5-preview dist/vot.user.js --clobber
