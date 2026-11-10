@@ -27,7 +27,7 @@ export const PROXY_WORKER_HOST = "vot-worker.eu.cc"; // vot-worker.toil.cc
  */
 export const MEDIA_PROXY_HOST = votConfig.mediaProxy;
 
-const repoPath = "ilyhalight/voice-over-translation";
+const repoPath = "ARST113/voice-over-translation";
 export const contentUrl = `https://raw.githubusercontent.com/${repoPath}`;
 export const repositoryUrl = `https://github.com/${repoPath}`;
 
