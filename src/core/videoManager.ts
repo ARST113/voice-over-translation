@@ -27,7 +27,7 @@ import {
 import type { VideoHandler } from "../VideoHandler";
 import VOTLocalizedError from "../VOTLocalizedError";
 import { normalizeMediaProxyHost } from "../videoHandler/modules/proxyShared";
-import { getHtml5CaptionTracks, isUniversalHtml5Site, resolveHtml5MediaUrl } from "../universal/html5";
+import { getHtml5CaptionTracks, getHtml5TranslationSource, isUniversalHtml5Site, resolveHtml5MediaUrl } from "../universal/html5";
 import { isExternalVolumeHost } from "./hostPolicies";
 
 const FORCED_DETECTED_LANGUAGE_BY_HOST: Record<string, RequestLang> = {
@@ -552,8 +552,7 @@ export class VOTVideoManager {
           );
         }
         return {
-          url: mediaUrl,
-          videoId: mediaUrl,
+          ...getHtml5TranslationSource(video, mediaUrl),
           host: VideoService.custom,
           duration: Number.isFinite(video.duration) ? video.duration : undefined,
           isStream: video.duration === Infinity,
