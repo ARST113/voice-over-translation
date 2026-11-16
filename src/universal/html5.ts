@@ -1,4 +1,4 @@
-import type { VideoDataSubtitle } from "@vot.js/core/types/client";
+import type { VideoData, VideoDataSubtitle } from "@vot.js/core/types/client";
 import { VideoService } from "@vot.js/core/types/service";
 import type { ServiceConf } from "@vot.js/ext/types/service";
 
@@ -37,6 +37,54 @@ export function resolveHtml5MediaUrl(video: HTMLVideoElement): string | null {
     }
   }
   return null;
+}
+
+/**
+ * Yandex's translationHelp API expects a stable video-page URL and a separate
+ * video_file_url for MP4/WebM sources. Sending a short-lived signed media URL
+ * as the video's primary URL can cause translation and subtitle lookup to fail.
+ *
+ * This does not proxy media or bypass origin authorization: the Yandex backend
+ * must still be able to retrieve the media URL independently.
+ */
+export function getHtml5TranslationSource(
+  video: HTMLVideoElement,
+  mediaUrl: string,
+): Pick<VideoData, "url" | "videoId" | "translationHelp"> {
+  let directFile = false;
+  try {
+    directFile = /\\.(?:mp4|webm)\\/?$/i.test(new URL(mediaUrl).pathname);
+  } catch {
+    return { url: mediaUrl, videoId: mediaUrl, translationHelp: null };
+  }
+
+  if (!directFile) {
+    return { url: mediaUrl, videoId: mediaUrl, translationHelp: null };
+  }
+
+  const documentUrl = video.ownerDocument.location?.href ||
+    video.ownerDocument.URL || video.ownerDocument.baseURI;
+  try {
+    const page = new URL(documentUrl);
+    if (
+      (page.protocol !== "https:" && page.protocol !== "http:") ||
+      !isPublicHost(page.hostname) ||
+      page.username || page.password
+    ) {
+      return { url: mediaUrl, videoId: mediaUrl, translationHelp: null };
+    }
+    page.hash = "";
+    if (page.href === mediaUrl) {
+      return { url: mediaUrl, videoId: mediaUrl, translationHelp: null };
+    }
+    return {
+      url: page.href,
+      videoId: mediaUrl,
+      translationHelp: [{ target: "video_file_url", targetUrl: mediaUrl }],
+    };
+  } catch {
+    return { url: mediaUrl, videoId: mediaUrl, translationHelp: null };
+  }
 }
 
 /**
