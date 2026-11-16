@@ -53,7 +53,7 @@ export function getHtml5TranslationSource(
 ): Pick<VideoData, "url" | "videoId" | "translationHelp"> {
   let directFile = false;
   try {
-    directFile = /\\.(?:mp4|webm)\\/?$/i.test(new URL(mediaUrl).pathname);
+    directFile = /\.(?:mp4|webm)\/?$/i.test(new URL(mediaUrl).pathname);
   } catch {
     return { url: mediaUrl, videoId: mediaUrl, translationHelp: null };
   }
