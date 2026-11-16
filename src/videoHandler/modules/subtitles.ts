@@ -250,7 +250,12 @@ export async function ensureSubtitlesForCurrentLangPair(this: VideoHandler) {
 
   if (isUniversalHtml5Site(this.site)) {
     const cached = this.cacheManager.getSubtitles(cacheKey);
-    if (cached !== undefined) {
+    if (Array.isArray(cached) && cached.length === 0) {
+      // Generic pages may initially return "waiting" from the Yandex
+      // subtitle service. A cached empty list would prevent later retries.
+      this.cacheManager.deleteSubtitles(cacheKey);
+      this.subtitlesCacheKey = null;
+    } else if (cached !== undefined) {
       const reconciled = reconcileHtml5Tracks(this, cached);
       if (JSON.stringify(cached) !== JSON.stringify(reconciled)) {
         this.cacheManager.setSubtitles(cacheKey, reconciled);
@@ -412,7 +417,9 @@ export async function loadSubtitles(this: VideoHandler) {
       try {
         cachedSubs = await inflight;
         cachedSubs = Array.isArray(cachedSubs) ? cachedSubs : [];
-        this.cacheManager.setSubtitles(cacheKey, cachedSubs);
+        if (!isUniversalHtml5Site(this.site) || cachedSubs.length > 0) {
+          this.cacheManager.setSubtitles(cacheKey, cachedSubs);
+        }
       } finally {
         // Only clear if we're still pointing at the same promise.
         if (this.subtitlesLoadPromises.get(cacheKey) === inflight) {
@@ -445,7 +452,7 @@ export async function loadSubtitles(this: VideoHandler) {
   }
   if (isUniversalHtml5Site(this.site)) {
     this.subtitles = reconcileHtml5Tracks(this, this.subtitles);
-    if (this.subtitlesCacheKey === cacheKey) {
+    if (this.subtitlesCacheKey === cacheKey && this.subtitles.length > 0) {
       this.cacheManager.setSubtitles(cacheKey, this.subtitles);
     }
   }

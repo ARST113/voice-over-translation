@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import {
   getHtml5CaptionTracks,
+  getHtml5TranslationSource,
   isUniversalHtml5Site,
   resolveHtml5MediaUrl,
 } from "../src/universal/html5";
@@ -141,4 +142,59 @@ test("preserves unknown subtitle language instead of guessing the speech languag
     querySelectorAll: () => [fakeTrack("https://cdn.example/caption.vtt", "")],
   });
   expect(getHtml5CaptionTracks(video)[0].language).toBe("und");
+});
+
+test("uses the documented video_file_url hint for MP4 on an unknown site", () => {
+  const video = makeVideo({
+    ownerDocument: {
+      baseURI: "https://site.example/video?id=23",
+      location: { href: "https://site.example/video?id=23#player" },
+    },
+  });
+  const media = "https://cdn.example/clip.mp4?token=temporary";
+  expect(getHtml5TranslationSource(video, media)).toEqual({
+    url: "https://site.example/video?id=23",
+    videoId: media,
+    translationHelp: [{ target: "video_file_url", targetUrl: media }],
+  });
+});
+
+test("handles signed MP4 URLs with a trailing slash", () => {
+  const video = makeVideo();
+  const media = "https://cdn.example/video.mp4/?v-acctoken=temporary";
+  expect(getHtml5TranslationSource(video, media)).toEqual({
+    url: "https://site.example/page/",
+    videoId: media,
+    translationHelp: [{ target: "video_file_url", targetUrl: media }],
+  });
+});
+
+test("does not mislabel HLS/DASH URLs as a direct video file", () => {
+  const video = makeVideo();
+  for (const media of [
+    "https://cdn.example/playlist.m3u8?token=temp",
+    "https://cdn.example/manifest.mpd",
+    "https://cdn.example/watch?video=123",
+  ]) {
+    expect(getHtml5TranslationSource(video, media)).toEqual({
+      url: media,
+      videoId: media,
+      translationHelp: null,
+    });
+  }
+});
+
+test("retains direct media URL if the page is local or non-HTTP", () => {
+  const media = "https://cdn.example/movie.webm";
+  const video = makeVideo({
+    ownerDocument: {
+      baseURI: "about:blank",
+      location: { href: "http://localhost:8080/view" },
+    },
+  });
+  expect(getHtml5TranslationSource(video, media)).toEqual({
+    url: media,
+    videoId: media,
+    translationHelp: null,
+  });
 });

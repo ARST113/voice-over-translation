@@ -33,7 +33,7 @@ function normalizeHostPermission(
   if (!entry) return null;
   const value = String(entry).trim();
   if (!value) return null;
-  if (value === "<all_urls>") return value;
+  if (value === "<all_urls>" || value === "*") return "<all_urls>";
 
   if (/^[a-z*]+:\/\//i.test(value)) {
     if (/^[a-z*]+:\/\/[^/]+\/?$/i.test(value)) {
