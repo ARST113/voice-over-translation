@@ -22,6 +22,7 @@ import { getHeaders } from "./utils";
 
 const YANDEX_API_HOST = "api.browser.yandex.ru";
 const GOOGLEVIDEO_HOST_SUFFIX = "googlevideo.com";
+const CLOUDFLARE_DNS_HOST = "cloudflare-dns.com";
 const HEADER_LINE_RE = /^(\w[\w-]*):\s*(\S.*)$/;
 // Matches statusText reason-phrase: printable ASCII except control chars
 const URL_SCHEME_RE = /^[a-zA-Z][a-zA-Z\d+.-]*:/;
@@ -149,13 +150,15 @@ function shouldUseGmXhr(
     const lowerUrl = url.toLowerCase();
     return (
       lowerUrl.includes(YANDEX_API_HOST) ||
-      lowerUrl.includes(GOOGLEVIDEO_HOST_SUFFIX)
+      lowerUrl.includes(GOOGLEVIDEO_HOST_SUFFIX) ||
+      lowerUrl.includes(CLOUDFLARE_DNS_HOST)
     );
   }
 
   return (
     isHostOrSubdomain(host, YANDEX_API_HOST) ||
-    isHostOrSubdomain(host, GOOGLEVIDEO_HOST_SUFFIX)
+    isHostOrSubdomain(host, GOOGLEVIDEO_HOST_SUFFIX) ||
+    isHostOrSubdomain(host, CLOUDFLARE_DNS_HOST)
   );
 }
 
