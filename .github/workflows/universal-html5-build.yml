@@ -12,6 +12,8 @@ on:
       - "package.json"
       - "bun.lock"
       - "tests/universalHtml5.test.ts"
+      - "tests/manifest-permissions.test.ts"
+      - "vite/lib/extension/manifest-helpers.ts"
       - ".github/workflows/universal-html5-build.yml"
   pull_request:
     branches: [master]
@@ -31,7 +33,7 @@ jobs:
       - name: Check TypeScript
         run: bun run check
       - name: Test universal source resolver
-        run: bun test tests/universalHtml5.test.ts
+        run: bun test tests/universalHtml5.test.ts tests/manifest-permissions.test.ts
       - name: Build Tampermonkey userscript
         run: bun run build:gm:default
       - uses: actions/upload-artifact@v4
